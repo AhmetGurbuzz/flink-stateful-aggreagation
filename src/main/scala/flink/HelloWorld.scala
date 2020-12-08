@@ -7,11 +7,12 @@ import org.apache.flink.streaming.api.windowing.time.Time
 
 object HelloWorld extends App {
   val params: ParameterTool = ParameterTool.fromArgs(args)
-  // make parameters available in the web interface
-  env.getConfig.setGlobalJobParameters(params)
 
   // set up the streaming execution environment
   val env = StreamExecutionEnvironment.getExecutionEnvironment
+
+  // make parameters available in the web interface
+  env.getConfig.setGlobalJobParameters(params)
 
   /*val data: Seq[String] = Seq(
     "Hello Mello Hello",

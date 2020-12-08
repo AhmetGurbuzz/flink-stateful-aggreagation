@@ -1,6 +1,6 @@
 package flink.stateful
 
-import Helper.incrementalAvg
+import Helper._
 import flink.schema.{CardTransaction, Habit}
 import org.apache.flink.api.common.functions.RichFlatMapFunction
 import org.apache.flink.api.common.state.{ValueState, ValueStateDescriptor}
@@ -17,10 +17,10 @@ class CustomerMerchantHabit extends RichFlatMapFunction[CardTransaction, Habit] 
   private var habitState: ValueState[Habit] = _
 
   override def flatMap(input: CardTransaction, out: Collector[Habit]): Unit = {
-    val curHbt:Habit = if (habitState.value != null) {
+    val curHbt: Habit = if (habitState.value != null) {
       habitState.value
     } else {
-      Habit(input.trx_id, 0, Long.MaxValue, Long.MinValue, input.amount, input.trx_time, input.trx_time)
+      Habit(input.trx_id, 0, Long.MaxValue, Long.MinValue, input.trx_amount, input.trx_time, input.trx_time)
     }
 
     var isUpdated = true
@@ -29,13 +29,13 @@ class CustomerMerchantHabit extends RichFlatMapFunction[CardTransaction, Habit] 
     val totalCount: Long = curHbt.count + 1
 
     /// Min
-    val minValue: Double = if (curHbt.min <= input.amount) curHbt.min else input.amount
+    val minValue: Double = if (curHbt.min <= input.trx_amount) curHbt.min else input.trx_amount
 
     /// Max
-    val maxValue: Double = if (curHbt.max >= input.amount) curHbt.max else input.amount
+    val maxValue: Double = if (curHbt.max >= input.trx_amount) curHbt.max else input.trx_amount
 
     /// Avg
-    val avgValue: Double = incrementalAvg(input.amount, curHbt.avg, totalCount)
+    val avgValue: Double = incrementalAvg(input.trx_amount, curHbt.avg, totalCount)
 
     /// First Time
     val first: Long = if (curHbt.first_trx <= input.trx_time) curHbt.first_trx else input.trx_time
@@ -47,9 +47,9 @@ class CustomerMerchantHabit extends RichFlatMapFunction[CardTransaction, Habit] 
 
     if (isUpdated) {
       habitState.update(newHabit)
+      out.collect(newHabit)
     }
 
-    out.collect(newHabit)
   }
 
   override def open(parameters: Configuration): Unit = {
